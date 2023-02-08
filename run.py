@@ -13,7 +13,7 @@ import json
 from models.dac_lstm import DAC_LSTMModel   # model
 from utils.data_loader import data_loader   # dataset
 from utils.strategy import set_seed, R2, MAPE  # strategy
-from config import parse_args
+from config.config_daclstm import parse_args
 from train import train_full
 from test import test_full
 
