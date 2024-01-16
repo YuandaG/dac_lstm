@@ -2,7 +2,7 @@
 
 ## 2024.1.24 dac-lstm v0 is uploaded
 
-dac-lstm v0 include not up-to-date code, which only used to demonstrate the ability of dac-lstm, not the latest code used to generate results in the paper. The latest code will be available soon
+dac-lstm v0 is behind the latest version., which only used to demonstrate the ability of dac-lstm, not the latest code used to generate results in the paper. The latest code will be available soon
 
 ## 2023.2.8 ConvLSTM added for 2D sequencial analysis
 
