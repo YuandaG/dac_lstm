@@ -17,13 +17,14 @@ from keras.callbacks import EarlyStopping
 import pandas as pd
 from tensorflow.keras.optimizers import RMSprop
 from numba import cuda 
+from ..utils.tools import *
 from parameter import *
 import operator
 import tensorflow as tf
 gpu_devices = tf.config.experimental.list_physical_devices("GPU")
 for device in gpu_devices:
     tf.config.experimental.set_memory_growth(device, True)
-import os
+import os,sys
 os.environ['TF_XLA_FLAGS'] = '--tf_xla_enable_xla_devices'
 
 
@@ -31,8 +32,6 @@ os.environ['TF_XLA_FLAGS'] = '--tf_xla_enable_xla_devices'
 # a: Coefficient, for 5 min a=6, 30 min a=1
 # rolling: smooth the curve
 
-
-GSP_index = 'A1'
 if control == 0:
     #05hr
     a = 1
@@ -187,7 +186,6 @@ def get_ori_testy(loaddata_randomerror):
 
 
 def forecast_main():
-    
     values, n_feature, n_obs = prepare_data(dataset, timestep, predictstep)
     scaled_values, scaler = scale(values)
     train, test = split_train_test(scaled_values)
@@ -227,9 +225,10 @@ def forecast_main():
     ### compares the actual value and the next 5min accuracy, the second column represents the actual value and the accuracy
     ### at 10min forecast.
     
-    
+    check_path(path_model_save)
+
     # !mkdir -p saved_model
-    model.save('G:/LSTM Model/%ihousehold_%i_5min.h5'%(household, days_for_model))
+    model.save(os.path.join(path_model_save,'%ihousehold_%i_5min.h5'%(household, days_for_model)))
     inv_testprediction, inv_testy = model_prediction(model, test_X, test_y, scaler, n_feature, scaled_values)
     # inv_testy_ev = inv_y(test_X_ev, test_y_ev, scaled_values_ev, scaler_ev)
     # inv_testprediction_ev, inv_testy_ev = model_prediction(model, test_X_ev, test_y_ev, scaler_ev, n_feature_ev)
@@ -248,15 +247,15 @@ def forecast_main():
     
     # Original test_y
     if GSPs == 1:
-        loaddata = read_csv('G:/LSTM Data/GSP2011_5min_%s.csv'%GSP_index, header=0)
+        loaddata = read_csv(os.path.join(path_GSP_data,'GSP2011_5min_%s.csv'%GSP_index), header=0)
         loaddata_randomerror = -1*loaddata.values[:,0]
         inv_testy_randomerror = get_ori_testy(loaddata_randomerror)
     if household != 0:
-        loaddata = read_csv('G:/LSTM/data_%i.csv'%household, header=0)
+        loaddata = read_csv(os.path.join(path_households_data,'data_%i.csv'%household), header=0)
         loaddata_randomerror = loaddata.values[:,0]
         inv_testy_randomerror = get_ori_testy(loaddata_randomerror)
     if future == 1:
-        loaddata = read_csv('G:/LSTM data/TravelPattern/future_load.csv', header=0)
+        loaddata = read_csv(os.path.join(path_future_data,'future_load.csv'), header=0)
         loaddata_randomerror = loaddata.values[:,3]
         inv_testy_randomerror = get_ori_testy(loaddata_randomerror)
     
@@ -274,8 +273,9 @@ def forecast_main():
     history_file = np.zeros((i.shape[0],2))
     history_file[:,0] = i
     history_file[:,1] = j
+    check_path(path_model_history)
     aaaaa4=pd.DataFrame(history_file)
-    savecsv4='G:/model_win/TV_general/%ihr_smooth_%ihousehold_%idays.csv'%(hr, household,days_for_model)
+    savecsv4=os.path.join(path_model_history,'%ihr_smooth_%ihousehold_%idays.csv'%(hr, household,days_for_model))
     aaaaa4.to_csv(savecsv4,index=None)
     # plt.figure(figsize=(12,8),dpi=300)
     # plt.plot(inv_testprediction[-48*7:],label = 'prediction')
@@ -383,6 +383,8 @@ def forecast_main():
     # device = cuda.get_current_device()
     # device.reset()
 
+assert os.path.exists(path_project), "Current path invalid, please change path"
+
 # day = [14,30,50,100,150,200,250,300,350,400,450,500,550]
 # household = [15,30,50,100,150,220]
 household = [220]
@@ -412,21 +414,22 @@ for b in household:
     n = int(24 * 60 * 60 / data_sample_second)
     
     
-    evdata = read_csv('G:/LSTM/ev_expand_5min.csv', header=0)
+    evdata = read_csv(path_ev_data, header=0)
     
     # For GSP
     if GSPs == 1:
         household = 0
-        loaddata = read_csv('G:/LSTM Data/GSP2011_5min_%s.csv'%GSP_index, header=0)
+        loaddata = read_csv(os.path.join(path_GSP_data,'GSP2011_5min_%s.csv'%GSP_index), header=0)
         loaddata = -1*loaddata.rolling(rolling,min_periods=1).mean()
         loaddata=pd.DataFrame(loaddata)
         loaddata = loaddata.values
         dataset = np.zeros((loaddata.shape[0],loaddata.shape[1]))
         dataset[:,0] = loaddata[:,0]
-        print('GSP, selection')
+        print('GSP data loaded')
     # #For household
     elif household != 0 & GSPs == 0:
-        loaddata = read_csv('G:/LSTM/data_%i.csv'%household, header=0)
+        # loaddata = read_csv('G:/LSTM/data_%i.csv'%household, header=0)
+        loaddata = read_csv(os.path.join(path_households_data,'data_%i.csv'%household), header=0)
         if long_test == 1:
             loaddata = loaddata['0']
             
@@ -454,9 +457,10 @@ for b in household:
         dataset[:,0] = loaddata[:,0]
         # dataset[:,:] = loaddata[:,:]
         # dataset[:,1] = loaddata[:,1]
-        print('TVVP household, selection')
+        print('TVVP household data loaded')
     elif household == 0 & GSPs == 0:
-        #05hr
+        # 05hr
+        # Data missing
         loaddata = read_csv('G:/LSTM_Prediction/data/weather_data_expanded_05hr_result.csv', header=0)
         dataset = np.zeros((loaddata.shape[0],1))
         loaddata = loaddata.values
@@ -464,7 +468,7 @@ for b in household:
     
     elif future == 1:
         #05hr
-        loaddata = read_csv('G:/LSTM data/TravelPattern/future_load.csv', header=0)
+        loaddata = read_csv(os.path.join(path_future_data,'future_load.csv'), header=0)
         dataset = np.zeros((loaddata.shape[0],1))
         loaddata = loaddata.values
         dataset[:,0] = loaddata[:,1]    
@@ -478,7 +482,7 @@ for b in household:
         # loaddata = loaddata.values
         # dataset[:,0] = loaddata[:,0]+evdata[:,0]
         # dataset[:,1] = loaddata[:,1]
-        print('TVVP, selection')
+        print('Future TVVP data loaded')
 
     evdata = evdata.values
     # dataset = np.zeros((loaddata.shape[0],loaddata.shape[1]))
