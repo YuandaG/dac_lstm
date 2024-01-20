@@ -17,7 +17,6 @@ from keras.callbacks import EarlyStopping
 import pandas as pd
 from tensorflow.keras.optimizers import RMSprop
 from numba import cuda 
-from ..utils.tools import *
 from parameter import *
 import operator
 import tensorflow as tf
@@ -28,23 +27,11 @@ import os,sys
 os.environ['TF_XLA_FLAGS'] = '--tf_xla_enable_xla_devices'
 
 
-# control = 1 for 5 min data, = 0 for 30 min data
-# a: Coefficient, for 5 min a=6, 30 min a=1
-# rolling: smooth the curve
+def check_path(path):
+    if not os.path.exists(path):
+    # Create the directory if it doesn't exist
+        os.makedirs(path)
 
-if control == 0:
-    #05hr
-    a = 1
-    rolling = 1
-    predictstep = hr * 2
-    print("05hr")
-elif control == 1:
-    #5min
-    a = 6
-    rolling = 2
-    predictstep = 6
-    print("5min")
- 
 # convert series to supervised learning
 def series_to_supervised(data, n_in=1, n_out=1, dropnan=True):
     n_vars = 1 if type(data) is list else data.shape[1]
@@ -302,8 +289,8 @@ def forecast_main():
     plt.plot(inv_testy[-48*a*7:,plt_index],label = 'Real')
     plt.plot(inv_testprediction[-48*a*7:,plt_index],label = 'Forecast')
     plt.legend()
-    plt.xlabel('Sample count');
-    plt.ylabel('Power(W)');
+    plt.xlabel('Sample count')
+    plt.ylabel('Power(W)')
     plt.show()
     
     # # calculate RMSE 5min
@@ -327,41 +314,50 @@ def forecast_main():
         savecsv1='G:/LSTM Data/GSP_result/GSP_5min_%s_smooth.csv'%GSP_index
         savecsv2='G:/LSTM Data/GSP_result/GSP_5min_%s_real.csv'%GSP_index
         savecsv3='G:/LSTM Data/GSP_result/GSP_5min_%s_forecast.csv'%GSP_index
-        print('GSP saved')
         aaaaa1=pd.DataFrame(inv_testy)
         aaaaa2=pd.DataFrame(inv_testy_randomerror)
         aaaaa3=pd.DataFrame(inv_testprediction)
         aaaaa1.to_csv(savecsv1,index=None)
         aaaaa2.to_csv(savecsv2,index=None)
         aaaaa3.to_csv(savecsv3,index=None)
+        print('GSP saved')
     elif household != 0 & GSPs == 4:
         savecsv1='G:/model_win/household comparison/%ihousehold_%i_5min_smooth.csv'%(household,days_for_model)
         savecsv2='G:/model_win/household comparison/%ihousehold_%i_5min_real.csv'%(household,days_for_model)
         savecsv3='G:/model_win/household comparison/%ihousehold_%i_5min_forecast.csv'%(household,days_for_model)
-        print('TVVP Household saved')
         aaaaa1=pd.DataFrame(inv_testy)
         aaaaa2=pd.DataFrame(inv_testy_randomerror)
         aaaaa3=pd.DataFrame(inv_testprediction)
         aaaaa1.to_csv(savecsv1,index=None)
         aaaaa2.to_csv(savecsv2,index=None)
         aaaaa3.to_csv(savecsv3,index=None)
+        print('TVVP Household saved')
     elif (GSPs == 0):
         aaaaa1=pd.DataFrame(inv_testy)
         # aaaaa2=pd.DataFrame(inv_testy_randomerror)
         aaaaa3=pd.DataFrame(inv_testprediction)
-        if n == 288:
-            savecsv1='G:/model_win/TV_general/365_5min_smooth.csv'
-            savecsv2='G:/model_win/TV_general/365_5min_real.csv'
-            savecsv3='G:/model_win/TV_general/365_5min_forecast.csv'
-        elif n == 48:
-            savecsv1='G:/model_win/TV_general/%ihr_smooth_%ihousehold_%idays.csv'%(hr, household,days_for_model)
-            savecsv2='G:/model_win/TV_general/%ihr_real.csv'
-            savecsv3='G:/model_win/TV_general/%ihr_forecast_%ihousehold_%idays.csv'%(hr,household,days_for_model)
-        print('TVVP saved')
+        # n=288 -- 5min, n=48 -- 30min
+        if n == 48:
+            print(f'testing n=48,output path')
+            savecsv1=os.path.join(path_30min,'%ihr_smooth_%ihousehold_%idays.csv'%(hr, household,days_for_model))
+            # savecsv2=os.path.join(path_5min,'%ihr_real_%ihousehold_%idays.csv'%(hr, household,days_for_model))
+            savecsv3=os.path.join(path_30min,'%ihr_forecast_%ihousehold_%idays.csv'%(hr,household,days_for_model))
+            check_path(path_30min)
+        # TODO: needs further check, when using 5-min, code below should be executed, instead of above 3 lines of code.
+        elif n == 288:
+            print(f'testing n=288,output path')
+            # savecsv1='G:/model_win/TV_general/%ihr_smooth_%ihousehold_%idays.csv'%(hr, household,days_for_model)
+            # savecsv2='G:/model_win/TV_general/%ihr_real.csv'
+            # savecsv3='G:/model_win/TV_general/%ihr_forecast_%ihousehold_%idays.csv'%(hr,household,days_for_model)
+            savecsv1=os.path.join(path_5min,'%ihr_smooth_%ihousehold_%idays.csv'%(hr, household,days_for_model))
+            # savecsv2=os.path.join(path_5min,'%ihr_real_%ihousehold_%idays.csv'%(hr, household,days_for_model))
+            savecsv3=os.path.join(path_5min,'%ihr_forecast_%ihousehold_%idays.csv'%(hr,household,days_for_model))
+            check_path(path_5min)
         aaaaa1=pd.DataFrame(inv_testy)
         aaaaa3=pd.DataFrame(inv_testprediction)
         aaaaa1.to_csv(savecsv1,index=None)
         aaaaa3.to_csv(savecsv3,index=None)
+        print('TVVP saved')
     # elif (future == 1):
     #     aaaaa1=pd.DataFrame(inv_testy)
     #     # aaaaa2=pd.DataFrame(inv_testy_randomerror)
@@ -380,148 +376,152 @@ def forecast_main():
     #     aaaaa1.to_csv(savecsv1,index=None)
     #     aaaaa3.to_csv(savecsv3,index=None)
     # Reset GPU and release gpu memory
-    # device = cuda.get_current_device()
-    # device.reset()
+    device = cuda.get_current_device()
+    device.reset()
 
 assert os.path.exists(path_project), "Current path invalid, please change path"
 
-# day = [14,30,50,100,150,200,250,300,350,400,450,500,550]
-# household = [15,30,50,100,150,220]
-household = [220]
-# for b in day:
-#     household = 220
-#     days_for_model = b
-#     print(days_for_model)
+# control = 1 for 5 min data, = 0 for 30 min data
+# a: Coefficient, for 5 min a=6, 30 min a=1
+# rolling: smooth the curve
 
-for b in household:
-    days_for_model = 365
-    household = b
-    print('household',household)
-    
-    # household = 220
-    # # days_for_model =  500
-    # control = 0
-    # GSP = 0
+if control == 0:
+    #05hr
+    a = 1
+    rolling = 1
+    predictstep = predictstep_30min
+    timestep = pre_time*a*2-predictstep # default assuming 24hrs = predictstep + timestep
+    print("05hr")
+elif control == 1:
+    #5min
+    a = 6
+    rolling = 2
+    predictstep = predictstep_5min
+    timestep = pre_time*a*2-predictstep
+    print("5min")
 
-    # print(a)
-    
+# for b in household:
     # fix the random seed
-    np.random.seed(5)
-    
-    data_sample_second = 30*60/a # 30min
-    # data_sample_second = 30*10 # 5min | 30*60 30min
-    # n depends on the data sample time interval, 1hr-24, 0.5hr-48, etc.
-    n = int(24 * 60 * 60 / data_sample_second)
-    
-    
-    evdata = read_csv(path_ev_data, header=0)
-    
-    # For GSP
-    if GSPs == 1:
-        household = 0
-        loaddata = read_csv(os.path.join(path_GSP_data,'GSP2011_5min_%s.csv'%GSP_index), header=0)
-        loaddata = -1*loaddata.rolling(rolling,min_periods=1).mean()
-        loaddata=pd.DataFrame(loaddata)
-        loaddata = loaddata.values
-        dataset = np.zeros((loaddata.shape[0],loaddata.shape[1]))
-        dataset[:,0] = loaddata[:,0]
-        print('GSP data loaded')
-    # #For household
-    elif household != 0 & GSPs == 0:
-        # loaddata = read_csv('G:/LSTM/data_%i.csv'%household, header=0)
-        loaddata = read_csv(os.path.join(path_households_data,'data_%i.csv'%household), header=0)
-        if long_test == 1:
-            loaddata = loaddata['0']
-            
-        elif long_test == 0:
-            loaddata = loaddata['0'].rolling(rolling,min_periods=1).mean()
-        # print(loaddata.shape[1])
-        m = (loaddata.shape[0]-1)/6+1
-        # print(m)
-        trans_to_05hr = np.zeros((int(m),1))
-        # print('trans shape',trans_to_05hr.shape)
-        for i in range(len(trans_to_05hr)):
-            trans_to_05hr[i] = loaddata[6*i]
-            if trans_to_05hr[i] >120000 or trans_to_05hr[i] <10000:
-                trans_to_05hr[i] = trans_to_05hr[i-1]
-        plt.plot(trans_to_05hr[:,0])
-        plt.show()
-        if long_test == 1:
-            loaddata = pd.DataFrame(trans_to_05hr)
-            # print('05hr test')
-        elif long_test == 0:
-            loaddata = pd.DataFrame(loaddata)
-            # print('5min test')
-        loaddata = loaddata.values
-        dataset = np.zeros((loaddata.shape[0],loaddata.shape[1]))
-        dataset[:,0] = loaddata[:,0]
-        # dataset[:,:] = loaddata[:,:]
-        # dataset[:,1] = loaddata[:,1]
-        print('TVVP household data loaded')
-    elif household == 0 & GSPs == 0:
-        # 05hr
-        # Data missing
-        loaddata = read_csv('G:/LSTM_Prediction/data/weather_data_expanded_05hr_result.csv', header=0)
-        dataset = np.zeros((loaddata.shape[0],1))
-        loaddata = loaddata.values
-        dataset[:,0] = loaddata[:,1]   
-    
-    elif future == 1:
-        #05hr
-        loaddata = read_csv(os.path.join(path_future_data,'future_load.csv'), header=0)
-        dataset = np.zeros((loaddata.shape[0],1))
-        loaddata = loaddata.values
-        dataset[:,0] = loaddata[:,1]    
-    # loaddata = read_csv('G:/LSTM_Prediction/data/weather_data_expanded_05hr_result.csv', header=0)
-    # dataset = np.zeros((loaddata.shape[0],1))
-    # loaddata = loaddata.values
-    # dataset[:,0] = loaddata[:,1]
-        ##5min
-        # loaddata = read_csv('G:/LSTM/load_error_5min.csv', header=0)
-        # dataset = np.zeros((loaddata.shape[0],loaddata.shape[1]))
-        # loaddata = loaddata.values
-        # dataset[:,0] = loaddata[:,0]+evdata[:,0]
-        # dataset[:,1] = loaddata[:,1]
-        print('Future TVVP data loaded')
+np.random.seed(5)
 
-    evdata = evdata.values
+data_sample_second = 30*60/a # 30min
+# data_sample_second = 30*10 # 5min | 30*60 30min
+# n depends on the data sample time interval, 1hr-24, 0.5hr-48, etc.
+n = int(24 * 60 * 60 / data_sample_second)
+
+
+evdata = read_csv(path_ev_data, header=0)
+
+# For GSP
+if GSPs == 1:
+    household = 0
+    loaddata = read_csv(os.path.join(path_GSP_data,'GSP2011_5min_%s.csv'%GSP_index), header=0)
+    loaddata = -1*loaddata.rolling(rolling,min_periods=1).mean()
+    loaddata=pd.DataFrame(loaddata)
+    loaddata = loaddata.values
+    dataset = np.zeros((loaddata.shape[0],loaddata.shape[1]))
+    dataset[:,0] = loaddata[:,0]
+    print('GSP data loaded')
+# #For household
+elif (household != 0) & (GSPs == 0):
+    # loaddata = read_csv('G:/LSTM/data_%i.csv'%household, header=0)
+    loaddata = read_csv(os.path.join(path_households_data,'data_%i.csv'%household), header=0)
+    if long_test == 1:
+        loaddata = loaddata['0']
+        
+    elif long_test == 0:
+        loaddata = loaddata['0'].rolling(rolling,min_periods=1).mean()
+    # print(loaddata.shape[1])
+    m = (loaddata.shape[0]-1)/6+1
+    # print(m)
+    trans_to_05hr = np.zeros((int(m),1))
+    # print('trans shape',trans_to_05hr.shape)
+    for i in range(len(trans_to_05hr)):
+        trans_to_05hr[i] = loaddata[6*i]
+        if trans_to_05hr[i] >120000 or trans_to_05hr[i] <10000:
+            trans_to_05hr[i] = trans_to_05hr[i-1]
+    plt.plot(trans_to_05hr[:,0])
+    plt.show()
+    if long_test == 1:
+        loaddata = pd.DataFrame(trans_to_05hr)
+        # print('05hr test')
+    elif long_test == 0:
+        loaddata = pd.DataFrame(loaddata)
+        # print('5min test')
+    loaddata = loaddata.values
+    dataset = np.zeros((loaddata.shape[0],loaddata.shape[1]))
+    dataset[:,0] = loaddata[:,0]
+    # dataset[:,:] = loaddata[:,:]
+    # dataset[:,1] = loaddata[:,1]
+    print('TVVP household data loaded')
+elif (household == 0) & (GSPs == 0):
+    # 05hr
+    # Data missing
+    loaddata = read_csv('G:/LSTM_Prediction/data/weather_data_expanded_05hr_result.csv', header=0)
+    dataset = np.zeros((loaddata.shape[0],1))
+    loaddata = loaddata.values
+    dataset[:,0] = loaddata[:,1]
+    print(f'wrong data loaded')   
+
+elif future == 1:
+    #05hr
+    loaddata = read_csv(os.path.join(path_future_data,'future_load.csv'), header=0)
+    dataset = np.zeros((loaddata.shape[0],1))
+    loaddata = loaddata.values
+    dataset[:,0] = loaddata[:,1]    
+# loaddata = read_csv('G:/LSTM_Prediction/data/weather_data_expanded_05hr_result.csv', header=0)
+# dataset = np.zeros((loaddata.shape[0],1))
+# loaddata = loaddata.values
+# dataset[:,0] = loaddata[:,1]
+    ##5min
+    # loaddata = read_csv('G:/LSTM/load_error_5min.csv', header=0)
     # dataset = np.zeros((loaddata.shape[0],loaddata.shape[1]))
-    
-    #
-    # dataset[:,0] = loaddata[:,0]
+    # loaddata = loaddata.values
     # dataset[:,0] = loaddata[:,0]+evdata[:,0]
     # dataset[:,1] = loaddata[:,1]
-    
-    dataset=pd.DataFrame(dataset)
-    evdata=pd.DataFrame(evdata)
-    
-    
-    # defining parameters for LSTM network
-    learning_rate = 0.001
-    if days_for_model == 14 or days_for_model == 30 or days_for_model == 50:
-        n_batch_size = [48*1]
-        number_of_days_for_training = int(2/3*days_for_model)
+    print('Future TVVP data loaded')
 
-    else:
-        n_batch_size = [48*7]
-        number_of_days_for_training = int(2/3*days_for_model)
+evdata = evdata.values
+# dataset = np.zeros((loaddata.shape[0],loaddata.shape[1]))
 
-    
-    
-    #time of repeat to get average value, when the seed is fixed at the beginning, repeats times can be less
-    n_repeats = 1
-    scores = DataFrame()
-    
-    #time of epoch to stop training while there is no change of loss
-    epoch_earlystop = 20
-    scores_plot = []
-    
-    start_day = 1 #from 1 to 584
-    
-    
-    # how many steps used as input
-    # timestep = 24*a*1-predictstep
-    timestep = 48*1
-    # timestep = 48*6
-    drop_times = np.arange(predictstep)
-    forecast_main()
+#
+# dataset[:,0] = loaddata[:,0]
+# dataset[:,0] = loaddata[:,0]+evdata[:,0]
+# dataset[:,1] = loaddata[:,1]
+
+dataset=pd.DataFrame(dataset)
+evdata=pd.DataFrame(evdata)
+
+
+# defining parameters for LSTM network
+learning_rate = 0.001
+if days_for_model == 14 or days_for_model == 30 or days_for_model == 50:
+    n_batch_size = [48*1]
+    number_of_days_for_training = int(2/3*days_for_model)
+
+else:
+    n_batch_size = [48*7*6]
+    number_of_days_for_training = int(2/3*days_for_model)
+
+
+
+#time of repeat to get average value, when the seed is fixed at the beginning, repeats times can be less
+n_repeats = 1
+scores = DataFrame()
+
+#time of epoch to stop training while there is no change of loss
+epoch_earlystop = 10
+scores_plot = []
+
+start_day = 1 #from 1 to 584
+
+
+# how many steps used as input
+
+# timestep = 48*1
+# timestep = 48*6
+drop_times = np.arange(predictstep)
+print(f'household = {household}\npredictstep = {predictstep}\ntimestep = {timestep}\ndays_for_model = {days_for_model}')
+print(f'\nn_batch_size = {n_batch_size}')
+
+forecast_main()

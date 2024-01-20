@@ -27,22 +27,23 @@ from parameter import *
 import os
 from mpl_toolkits import mplot3d
 
-days_for_model =  550
-household = 220
+# days_for_model =  550
+# household = 220
 rolling = 1
 
+# r = '/Volumes/Extreme SSD/save model data/household comparison/%ihousehold_365_5min_real.csv'%household
+# p = '/Volumes/Extreme SSD/save model data/Peak load/%ihousehold_365_5min.csv'%household
+# f = '/Volumes/Extreme SSD/save model data/household comparison/%ihousehold_365_5min_fore.csv'%household
+# f_m = '/Volumes/Extreme SSD/save model data/household comparison/%ihousehold_365_5min_fore.csv'%household
 
-household = 150
-
-r = '/Volumes/Extreme SSD/save model data/household comparison/%ihousehold_365_5min_real.csv'%household
-p = '/Volumes/Extreme SSD/save model data/Peak load/%ihousehold_365_5min.csv'%household
-f = '/Volumes/Extreme SSD/save model data/household comparison/%ihousehold_365_5min_fore.csv'%household
-f_m = '/Volumes/Extreme SSD/save model data/household comparison/%ihousehold_365_5min_fore.csv'%household
-
-
+r = os.path.join(path_5min,'%ihr_smooth_%ihousehold_%idays.csv'%(hr, household,days_for_model))
+p = os.path.join(path_5min,'%ihr_peak_%ihousehold_%idays.csv'%(hr, household,days_for_model))
+f = os.path.join(path_5min,'%ihr_forecast_%ihousehold_%idays.csv'%(hr, household,days_for_model))
+f_m = os.path.join(path_5min,'%ihr_forecast_%ihousehold_%idays.csv'%(hr, household,days_for_model))
 
 time_interval = 5
 
+#TODO: check header=0?
 if time_interval == 30:
     real = pd.read_csv(r, header=0)
     peak = pd.read_csv(p, header=0)

@@ -7,7 +7,7 @@ Created on Thu Jan 21 13:52:14 2021
 """
 import matplotlib.pyplot as plt
 import numpy as np
-import pylab
+import pylab, os
 import pandas as pd
 import operator
 import csv
@@ -36,28 +36,45 @@ from parameter import *
 # elif long_test == 0 & household != 0 & GSPs == 0:
 #     y = pd.read_csv('G:/model_win/household comparison/%ihousehold_%i_5min_real.csv'%(household,days_for_model), header=0)
 #     savecsv='G:/save model data/Peak load/%ihousehold_%i_5min.csv'%(household,days_for_model)
-#     print('TVVP household')
+#     print('TVVP household, analysing 5-min data')
 # elif long_test == 1:
 #     # y = pd.read_csv('G:/save model data/for peak load file/5min_350_features_30minfor_valley_batch_real.csv', header=0)
 #     y = pd.read_csv('G:/model_win/TV_general/%ihr_smooth_%ihousehold_%idays.csv'%(hr, household,days_for_model))
 #     savecsv='G:/model_win/TV_general/peak/%ihr_forecast_%ihousehold_%idays.csv'%(hr,household,days_for_model)
-#     print('TVVP')
+#     print('TVVP household, analysing 30-min data')
 # else:
 #     print('Adjust parameters: GSPs, household')
 
-# print(household, days_for_model)
-# import os
-# if os.path.exists(savecsv):  # 如果文件存在
-#     # 删除文件，可使用以下两种方法。
-#     os.remove(savecsv)
+GSPs_index = 'A1'
+if (long_test == 0) & (GSPs == 1):
+    y = pd.read_csv('G:/LSTM Data/GSPs_result/GSPs_5min_%s_real.csv'%GSPs_index, header=0)
+    savecsv='G:/LSTM Data/GSPs_peak/GSPs_5min_%s_real.csv'%GSPs_index
+    print('GSPs')
+elif (long_test == 0) & (household != 0) & (GSPs == 0):
+    #TODO: need to confirm if header=0 is correct
+    y = pd.read_csv(os.path.join(path_5min,'%ihr_smooth_%ihousehold_%idays.csv'%(hr, household,days_for_model)), header=0)
+    savecsv= os.path.join(path_5min,'%ihr_peak_%ihousehold_%idays.csv'%(hr, household,days_for_model))
+    print('TVVP household, analysing 5-min data peak')
+elif (long_test == 1):
+    # y = pd.read_csv('G:/save model data/for peak load file/5min_350_features_30minfor_valley_batch_real.csv', header=0)
+    #TODO: need to confirm if header=0 is correct
+    y = pd.read_csv(os.path.join(path_30min,'%ihr_smooth_%ihousehold_%idays.csv'%(hr, household,days_for_model)), header=0)
+    savecsv= os.path.join(path_30min,'%ihr_peak_%ihousehold_%idays.csv'%(hr, household,days_for_model))
+    print('TVVP household, analysing 30-min data')
+else:
+    print('Adjust parameters: GSPs, household')
 
-# print(household, days_for_model)
+print(household, days_for_model)
+
+if os.path.exists(savecsv):
+    os.remove(savecsv)
+
 
 
 
 # future scenario
-y = pd.read_csv('G:/LSTM Data/TravelPattern/2040_real.csv', header=0)
-savecsv='G:/LSTM Data/TravelPattern/2040_peak.csv'
+# y = pd.read_csv('G:/LSTM Data/TravelPattern/2040_real.csv', header=0)
+# savecsv='G:/LSTM Data/TravelPattern/2040_peak.csv'
 
 def thresholding_algo(y, lag, threshold, influence):
     signals = np.zeros(len(y))
