@@ -1,4 +1,4 @@
 *.json
 dataset/*
 checkpoint/*
-outputs/*
+dac-lstm/dac_lstmV0/outputs/*
