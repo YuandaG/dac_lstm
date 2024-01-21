@@ -215,7 +215,7 @@ def forecast_main():
     check_path(path_model_save)
 
     # !mkdir -p saved_model
-    model.save(os.path.join(path_model_save,'%ihousehold_%i_5min.h5'%(household, days_for_model)))
+    model.save(os.path.join(path_model_save,file_name_model))
     inv_testprediction, inv_testy = model_prediction(model, test_X, test_y, scaler, n_feature, scaled_values)
     # inv_testy_ev = inv_y(test_X_ev, test_y_ev, scaled_values_ev, scaler_ev)
     # inv_testprediction_ev, inv_testy_ev = model_prediction(model, test_X_ev, test_y_ev, scaler_ev, n_feature_ev)
@@ -262,7 +262,7 @@ def forecast_main():
     history_file[:,1] = j
     check_path(path_model_history)
     aaaaa4=pd.DataFrame(history_file)
-    savecsv4=os.path.join(path_model_history,'%ihr_smooth_%ihousehold_%idays.csv'%(hr, household,days_for_model))
+    savecsv4=os.path.join(path_model_history, file_name_smooth_households_data)
     aaaaa4.to_csv(savecsv4,index=None)
     # plt.figure(figsize=(12,8),dpi=300)
     # plt.plot(inv_testprediction[-48*7:],label = 'prediction')
@@ -339,9 +339,9 @@ def forecast_main():
         # n=288 -- 5min, n=48 -- 30min
         if n == 48:
             print(f'testing n=48,output path')
-            savecsv1=os.path.join(path_30min,'%ihr_smooth_%ihousehold_%idays.csv'%(hr, household,days_for_model))
+            savecsv1=os.path.join(path_30min,file_name_smooth_households_data)
             # savecsv2=os.path.join(path_5min,'%ihr_real_%ihousehold_%idays.csv'%(hr, household,days_for_model))
-            savecsv3=os.path.join(path_30min,'%ihr_forecast_%ihousehold_%idays.csv'%(hr,household,days_for_model))
+            savecsv3=os.path.join(path_30min,file_name_forecast_households_data)
             check_path(path_30min)
         # TODO: needs further check, when using 5-min, code below should be executed, instead of above 3 lines of code.
         elif n == 288:
@@ -349,9 +349,9 @@ def forecast_main():
             # savecsv1='G:/model_win/TV_general/%ihr_smooth_%ihousehold_%idays.csv'%(hr, household,days_for_model)
             # savecsv2='G:/model_win/TV_general/%ihr_real.csv'
             # savecsv3='G:/model_win/TV_general/%ihr_forecast_%ihousehold_%idays.csv'%(hr,household,days_for_model)
-            savecsv1=os.path.join(path_5min,'%ihr_smooth_%ihousehold_%idays.csv'%(hr, household,days_for_model))
+            savecsv1=os.path.join(path_5min,file_name_smooth_households_data)
             # savecsv2=os.path.join(path_5min,'%ihr_real_%ihousehold_%idays.csv'%(hr, household,days_for_model))
-            savecsv3=os.path.join(path_5min,'%ihr_forecast_%ihousehold_%idays.csv'%(hr,household,days_for_model))
+            savecsv3=os.path.join(path_5min,file_name_forecast_households_data)
             check_path(path_5min)
         aaaaa1=pd.DataFrame(inv_testy)
         aaaaa3=pd.DataFrame(inv_testprediction)
@@ -378,6 +378,9 @@ def forecast_main():
     # Reset GPU and release gpu memory
     device = cuda.get_current_device()
     device.reset()
+
+
+# Main.py should start from here, needs further work
 
 assert os.path.exists(path_project), "Current path invalid, please change path"
 
@@ -424,33 +427,69 @@ if GSPs == 1:
     print('GSP data loaded')
 # #For household
 elif (household != 0) & (GSPs == 0):
-    # loaddata = read_csv('G:/LSTM/data_%i.csv'%household, header=0)
-    loaddata = read_csv(os.path.join(path_households_data,'data_%i.csv'%household), header=0)
+    # loaddata = read_csv(os.path.join(path_households_data,'data_%i.csv'%household), header=0)
+    # loaddata = read_csv(os.path.join(path_households_data,'weather_data_expanded_5min_result_loadonly.csv'), header=0) # Test with temp data
+    loaddata = read_csv(os.path.join(path_households_data, file_name_households_input_data), header=0) # Test with temp data
+
+    # If need to convert to 30 minutes data
     if long_test == 1:
-        loaddata = loaddata['0']
-        
+        # load_data = loaddata['0']
+        m = (loaddata.shape[0]-1)/6+1
+        try:
+            load_data = loaddata['0'].rolling(rolling,min_periods=1).mean()
+            trans_to_05hr_load = np.zeros((int(m),1))
+        except:
+            load_data = loaddata['0'].rolling(rolling,min_periods=1).mean()
+            temp_data = loaddata['1'].rolling(rolling,min_periods=1).mean()
+            trans_to_05hr_load = np.zeros((int(m),1))
+            trans_to_05hr_temp = np.zeros((int(m),1))
+        # Select data every 30 minutes and clean data exceed boundary --> usually wrongly recorded data
+        for i in range(len(trans_to_05hr_load)):
+            trans_to_05hr_load[i] = load_data[6*i]
+            try:
+                trans_to_05hr_temp[i] = temp_data[6*i]
+            except:
+                pass
+            if trans_to_05hr_load[i] >120000 or trans_to_05hr_load[i] <10000:
+                try:
+                    trans_to_05hr_load[i] = trans_to_05hr_load[i-1]
+                except:
+                    pass
+        load_data = pd.Series(trans_to_05hr_load.reshape(-1))
+        try:
+            temp_data = pd.Series(trans_to_05hr_temp.reshape(-1))
+        except:
+            pass
+        # plt.plot(load_data[:])
+        # plt.show()
+
     elif long_test == 0:
-        loaddata = loaddata['0'].rolling(rolling,min_periods=1).mean()
-    # print(loaddata.shape[1])
-    m = (loaddata.shape[0]-1)/6+1
-    # print(m)
-    trans_to_05hr = np.zeros((int(m),1))
-    # print('trans shape',trans_to_05hr.shape)
-    for i in range(len(trans_to_05hr)):
-        trans_to_05hr[i] = loaddata[6*i]
-        if trans_to_05hr[i] >120000 or trans_to_05hr[i] <10000:
-            trans_to_05hr[i] = trans_to_05hr[i-1]
-    plt.plot(trans_to_05hr[:,0])
+        try:
+            load_data = loaddata['0'].rolling(rolling,min_periods=1).mean()
+        except:
+            load_data = loaddata['0'].rolling(rolling,min_periods=1).mean()
+            temp_data = loaddata['1'].rolling(rolling,min_periods=1).mean()
+    
+    for i in range(len(load_data)):
+        if load_data[i] >120000 or load_data[i] <10000:
+            try:    
+                load_data[i] = load_data[i-1]
+            except:
+                pass
+    # Plot the load data t check if there is any obvious errors
+    plt.plot(load_data[:])
     plt.show()
-    if long_test == 1:
-        loaddata = pd.DataFrame(trans_to_05hr)
-        # print('05hr test')
-    elif long_test == 0:
-        loaddata = pd.DataFrame(loaddata)
+
+    try:    
+        loaddata = pd.concat([load_data, temp_data], axis=1)
+    except:
+        pass
+
+    loaddata = pd.DataFrame(loaddata)
         # print('5min test')
     loaddata = loaddata.values
-    dataset = np.zeros((loaddata.shape[0],loaddata.shape[1]))
-    dataset[:,0] = loaddata[:,0]
+    # dataset = np.zeros((loaddata.shape[0],loaddata.shape[1]))
+    dataset = loaddata
     # dataset[:,:] = loaddata[:,:]
     # dataset[:,1] = loaddata[:,1]
     print('TVVP household data loaded')
@@ -500,7 +539,7 @@ if days_for_model == 14 or days_for_model == 30 or days_for_model == 50:
     number_of_days_for_training = int(2/3*days_for_model)
 
 else:
-    n_batch_size = [48*7*6]
+    n_batch_size = [48*7]
     number_of_days_for_training = int(2/3*days_for_model)
 
 
@@ -510,7 +549,7 @@ n_repeats = 1
 scores = DataFrame()
 
 #time of epoch to stop training while there is no change of loss
-epoch_earlystop = 10
+epoch_earlystop = 5
 scores_plot = []
 
 start_day = 1 #from 1 to 584

@@ -1,4 +1,8 @@
 # dac-lstm
+## 2024.1.21 dac-lstm v0.2 is uploaded
+1. Multi-feature input supported, but not verified
+2. structure optimised
+
 ## 2024.1.20 dac-lstm v0.1 is uploaded
 1. dac-lstm basic function uploaded. Weather data missing, therefore the model is only tested with load data.
 2. Unfinished TODO lists.
@@ -8,4 +12,4 @@ dac-lstm v0 is behind the latest version., which only used to demonstrate the ab
 
 ## 2023.2.8 ConvLSTM added for 2D sequencial analysis
 
-## More function is coming
+# More function is coming

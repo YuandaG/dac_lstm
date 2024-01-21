@@ -1,5 +1,3 @@
-
-
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
@@ -36,10 +34,10 @@ rolling = 1
 # f = '/Volumes/Extreme SSD/save model data/household comparison/%ihousehold_365_5min_fore.csv'%household
 # f_m = '/Volumes/Extreme SSD/save model data/household comparison/%ihousehold_365_5min_fore.csv'%household
 
-r = os.path.join(path_5min,'%ihr_smooth_%ihousehold_%idays.csv'%(hr, household,days_for_model))
-p = os.path.join(path_5min,'%ihr_peak_%ihousehold_%idays.csv'%(hr, household,days_for_model))
-f = os.path.join(path_5min,'%ihr_forecast_%ihousehold_%idays.csv'%(hr, household,days_for_model))
-f_m = os.path.join(path_5min,'%ihr_forecast_%ihousehold_%idays.csv'%(hr, household,days_for_model))
+r = os.path.join(path_5min,file_name_smooth_households_data)
+p = os.path.join(path_5min,file_name_peak_households_data)
+f = os.path.join(path_5min,file_name_forecast_households_data)
+f_m = os.path.join(path_5min,file_name_forecast_households_data)
 
 time_interval = 5
 
@@ -244,7 +242,7 @@ for avg_num in avg_range:
         for n in n_range:
             # fm = forecast
             # f = forecast
-            dac = np.zeros((forecast.shape[0],6))
+            dac = np.zeros((forecast.shape[0],forecast.shape[1]))
             # r = r_ori
             print('reset')
             # dac = main()

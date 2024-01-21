@@ -52,14 +52,14 @@ if (long_test == 0) & (GSPs == 1):
     print('GSPs')
 elif (long_test == 0) & (household != 0) & (GSPs == 0):
     #TODO: need to confirm if header=0 is correct
-    y = pd.read_csv(os.path.join(path_5min,'%ihr_smooth_%ihousehold_%idays.csv'%(hr, household,days_for_model)), header=0)
-    savecsv= os.path.join(path_5min,'%ihr_peak_%ihousehold_%idays.csv'%(hr, household,days_for_model))
+    y = pd.read_csv(os.path.join(path_5min,file_name_smooth_households_data), header=0)
+    savecsv= os.path.join(path_5min,file_name_peak_households_data)
     print('TVVP household, analysing 5-min data peak')
 elif (long_test == 1):
     # y = pd.read_csv('G:/save model data/for peak load file/5min_350_features_30minfor_valley_batch_real.csv', header=0)
     #TODO: need to confirm if header=0 is correct
-    y = pd.read_csv(os.path.join(path_30min,'%ihr_smooth_%ihousehold_%idays.csv'%(hr, household,days_for_model)), header=0)
-    savecsv= os.path.join(path_30min,'%ihr_peak_%ihousehold_%idays.csv'%(hr, household,days_for_model))
+    y = pd.read_csv(os.path.join(path_30min,file_name_smooth_households_data), header=0)
+    savecsv= os.path.join(path_30min,file_name_peak_households_data)
     print('TVVP household, analysing 30-min data')
 else:
     print('Adjust parameters: GSPs, household')
