@@ -7,7 +7,7 @@ from itertools import chain
 
 
 @torch.inference_mode()
-def test_full(model, args, test, device, m, n):
+def test_full(model, args, test, device):
     pred = np.empty((0, args.output_size))
     y = np.empty((0, args.output_size))
     print('*******************loading models*******************')
@@ -23,7 +23,4 @@ def test_full(model, args, test, device, m, n):
             y_pred = model(seq)
             y_pred = y_pred.detach().cpu().numpy()
             pred = np.append(pred, y_pred, axis=0)
-
-    y = (m - n) * y + n
-    pred = (m - n) * pred + n
     return y, pred

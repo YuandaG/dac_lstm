@@ -53,7 +53,7 @@ def series_to_supervised(data, n_in=1, n_out=1, dropnan=True):
     agg.columns = names
     # drop rows with NaN values
     if dropnan:
-        agg.dropna(inplace=True)
+        agg.dropna(inplace=True) 
     return agg
 
 def R2(y_test, y_true):

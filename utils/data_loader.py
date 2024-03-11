@@ -6,7 +6,7 @@ from torch.utils.data import Dataset, DataLoader
 
 
 def load_data(args):
-    df = pd.read_csv(args.file_path)
+    df = pd.read_csv(args.file_path, header=None)
     columns = df.columns
     df.fillna(df.mean(), inplace=True)
     return df
@@ -32,8 +32,11 @@ def data_loader(args):
     # test = dataset[int(len(dataset) * args.split):len(dataset)]
 
     # for mini test
-    train = dataset[:1000]
-    test = dataset[1000:2000]
+    train = dataset[:int(len(dataset)*3/5)]
+    val = dataset[int(len(dataset)*3/5):int(len(dataset)*4/5):]
+    test = dataset[int(len(dataset)*4/5):]
+    # train = dataset[:1000]
+    # test = dataset[1000:2000]
 
     m, n = np.max(train[train.columns[0]]), np.min(train[train.columns[0]])
 
@@ -41,9 +44,9 @@ def data_loader(args):
         load = data[data.columns[0]]
         load = load.tolist()
         data = data.values.tolist()
-        load = (load - n) / (m - n)
+        # load = (load - n) / (m - n)
         seq = []
-        for i in range(len(data) - seq_len):
+        for i in range(len(data) - seq_len - output_size + 1):
             train_seq = []
             train_label = []
             for j in range(i, i + seq_len):
@@ -52,7 +55,7 @@ def data_loader(args):
             # for c in range(2, 8):
             #     train_seq.append(data[i + 24][c])\
             for k in range(output_size):
-                train_label.append(load[i + k])
+                train_label.append(load[i + seq_len + k])
             train_seq = torch.FloatTensor(train_seq)
             train_label = torch.FloatTensor(train_label).view(-1)
             seq.append((train_seq, train_label))
@@ -63,9 +66,10 @@ def data_loader(args):
 
         return seq, m, n
 
-    Dtr, m_train, n_train = process(train, args.batch_size, args.seq_len, args.output_size, True)
+    Dtr, _, _ = process(train, args.batch_size, args.seq_len, args.output_size, False)
     # Val = process(val, args.batch_size, True)
+    Dva, _, _ = process(test, args.batch_size, args.seq_len, args.output_size, False)
     Dte, m_test, n_test = process(test, args.batch_size, args.seq_len, args.output_size, False)
 
     print('Done...')
-    return Dtr, Dte, m_test, n_test
+    return Dtr, Dva, Dte, m_test, n_test

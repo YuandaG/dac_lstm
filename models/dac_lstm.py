@@ -9,25 +9,30 @@ class DAC_LSTMModel(nn.Module):
         super().__init__()
         self.device = device
         self.input_size = args.input_size
-        self.hidden_size = args.hidden_size
+        self.hidden_sizes = [args.hidden_size, args.hidden_size // 2, args.hidden_size // 4]
         self.num_layers = args.num_layers
         self.output_size = args.output_size
         self.num_directions = 1 # 2 for bi-direction lstm
         self.batch_size = args.batch_size
 
-        self.lstm = nn.LSTM(self.input_size, self.hidden_size, self.num_layers, batch_first=True)
+        # self.lstm = nn.LSTM(self.input_size, self.hidden_size, self.num_layers, batch_first=True)
         # for customizing each lstm layer
+        self.lstm1 = nn.LSTM(self.input_size, self.hidden_sizes[0], batch_first=True)
+        self.lstm2 = nn.LSTM(self.hidden_sizes[0], self.hidden_sizes[1], batch_first=True)
+        self.lstm3 = nn.LSTM(self.hidden_sizes[1], self.hidden_sizes[2], batch_first=True)
         # self.lstm1 = nn.LSTM(input_size, hidden_size)
         # self.lstm2 = nn.LSTM(hidden_size, hidden_size)
         # self.lstm3 = nn.LSTM(hidden_size, hidden_size)
-        self.linear = nn.Linear(args.hidden_size, args.output_size)
+        self.linear = nn.Linear(self.hidden_sizes[-1], self.output_size)
         # self.linear = nn.DAC(args.output_size, args.output_size)
 
     def forward(self, input_seq):
-        batch_size, seq_len = input_seq.shape[0], input_seq[1]
-        h_0 = torch.randn(self.num_directions * self.num_layers, self.batch_size, self.hidden_size).to(self.device)
-        c_0 = torch.randn(self.num_directions * self.num_layers, self.batch_size, self.hidden_size).to(self.device)
-        output, _ = self.lstm(input_seq, (h_0, c_0))
+        batch_size, seq_len, _ = input_seq.size()
+        h_0 = [torch.randn(self.num_directions, batch_size, hs).to(self.device) for hs in self.hidden_sizes]
+        c_0 = [torch.randn(self.num_directions, batch_size, hs).to(self.device) for hs in self.hidden_sizes]
+        output, _ = self.lstm1(input_seq, (h_0[0], c_0[0]))
+        output, _ = self.lstm2(output, (h_0[1], c_0[1]))
+        output, _ = self.lstm3(output, (h_0[2], c_0[2]))
         pred = self.linear(output)
         pred = pred[:, -1, :]
 
